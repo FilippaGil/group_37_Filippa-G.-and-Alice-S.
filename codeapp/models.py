@@ -5,5 +5,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 
-class Dummy:  # TODO: this class is to be removed
-    pass
+@dataclass
+class IGN_games:
+    title: str
+    score: float
+    score_phrase: str
+    platform: str
+    genre: str
+    release_year: int
+    release_month: int
+    release_day: int
+

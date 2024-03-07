@@ -1,31 +1,68 @@
 # built-in imports
-# standard library imports
+import collections
+import csv
+import os
 import pickle
+import uuid
+
+# standard library imports
 
 # external imports
+import requests
 from flask import current_app
+from sklearn.utils import Bunch
 
 # internal imports
 from codeapp import db
-from codeapp.models import Dummy
+from codeapp.models import IGN_games
 
 
-def get_data_list() -> list[Dummy]:
+def get_data_list() -> list[IGN_games]:
     """
     Function responsible for downloading the dataset from the source, translating it
     into a list of Python objects, and saving it to a Redis list.
     """
-    # TODO
-    pass
+    
+    response = requests.get("https://onu1.s2.chalmers.se/datasets/IGN_games.csv")
+    if response.status_code == 200:
+        with open("IGN_games.csv", "wb") as file:
+            file.write(response.content)
+            print("CSV file downloaded successfully as 'IGN_games.csv'")
+    else:
+        print(f"Failed to download CSV file. Status code: {response.status_code}")
+
+    dataset_base: list[IGN_games] = []  # list to store the items
+    # for each item in the dataset...
+    with open("IGN_games.csv", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            new_IGN_games = IGN_games(
+            title=row["title"],
+            score=row["score"],
+            score_phrase=row["score_phrase"],
+            platform=row["platform"],
+            genre=row["genre"],
+            release_year=row["release_year"],
+            release_month=row["release_month"],
+            release_day=row["release_day"],
+        )
+        # create a new object
+        # push object to the database list
+        db.rpush("dataset_list", pickle.dumps(new_IGN_games))
+        dataset_base.append(new_IGN_games)  # append to the list
+
+    return dataset_base
 
 
-def calculate_statistics(dataset: list[Dummy]) -> dict[int | str, int]:
+
+
+def calculate_statistics(dataset: list[IGN_games]) -> dict[int | str, int]:
     """
     Receives the dataset in the form of a list of Python objects, and calculates the
     statistics necessary.
     """
-    # TODO
-    pass
+    return {}
+    
 
 
 def prepare_figure(input_figure: str) -> str:
