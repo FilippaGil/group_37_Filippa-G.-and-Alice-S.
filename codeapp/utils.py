@@ -69,7 +69,18 @@ def calculate_statistics(dataset: list[IGN_games]) -> dict[int | str, int]:
     Receives the dataset in the form of a list of Python objects, and calculates the
     statistics necessary.
     """
-    return {}
+    gamedict: dict[int | str, int] = {}
+
+    for i in dataset:
+        if i.platform in gamedict:
+            gamedict[i.platform] += 1
+        else:
+            gamedict[i.platform] = 1
+
+    sorting = sorted(gamedict.items(), key=lambda item: item[1], reverse=True)
+    cutted = sorting[:20]
+    cutdict: dict[int | str, int] = dict(cutted)
+    return cutdict
 
 
 def prepare_figure(input_figure: str) -> str:
