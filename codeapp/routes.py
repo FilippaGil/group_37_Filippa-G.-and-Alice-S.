@@ -16,6 +16,7 @@ from werkzeug.wrappers.response import Response as WerkzeugResponse
 # internal imports
 import codeapp.models as models
 from codeapp.utils import calculate_statistics, get_data_list, prepare_figure
+from codeapp.models import IGN_games
 
 # define the response type
 Response = str | FlaskResponse | WerkzeugResponse
@@ -28,14 +29,45 @@ bp = Blueprint("bp", __name__, url_prefix="/")
 
 @bp.get("/")  # root route
 def home() -> Response:
-    # TODO
-    pass
+    # gets dataset
+    dataset: list[IGN_games] = get_data_list()
+
+    # get the statistics that is supposed to be shown
+    counter: dict[int, int] = calculate_statistics(dataset)
+
+    # render the page
+    return render_template("home.html", counter=counter)
 
 
 @bp.get("/image")
 def image() -> Response:
+    # gets dataset
+    dataset: list[Movie] = get_data_list()
+
+    # get the statistics that is supposed to be shown
+    counter: dict[int, int] = calculate_statistics(dataset)
+
     # creating the plot
+
     fig = Figure()
+    fig.gca().bar(
+        list(sorted(counter.keys())),
+        [counter[x] for x in sorted(counter.keys())],
+        color="gray",
+        alpha=0.5,
+        zorder=2,
+    )
+    fig.gca().plot(
+        list(sorted(counter.keys())),
+        [counter[x] for x in sorted(counter.keys())],
+        marker="x",
+        color="#25a848",
+        zorder=3,
+    )
+    fig.gca().grid(ls=":", zorder=1)
+    fig.gca().set_xlabel("Year")
+    fig.gca().set_ylabel("Number of movies")
+    fig.tight_layout()
 
     # TODO: populate the plot
 
@@ -66,3 +98,24 @@ def get_json_dataset() -> Response:
 def get_json_stats() -> Response:
     # TODO
     pass
+
+
+@bp.get("/json-dataset")  # root route
+def get_json_dataset() -> Response:
+    # gets dataset
+    dataset: list[Movie] = get_data_list()
+
+    # render the page
+    return jsonify(dataset)
+
+
+@bp.get("/json-stats")  # root route
+def get_json_stats() -> Response:
+    # gets dataset
+    dataset: list[Movie] = get_data_list()
+
+    # get the statistics that is supposed to be shown
+    counter: dict[int, int] = calculate_statistics(dataset)
+
+    # render the page
+    return jsonify(counter)
