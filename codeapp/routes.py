@@ -42,7 +42,7 @@ def home() -> Response:
 @bp.get("/image")
 def image() -> Response:
     # gets dataset
-    dataset: list[Movie] = get_data_list()
+    dataset: list[IGN_games] = get_data_list()
 
     # get the statistics that is supposed to be shown
     counter: dict[int, int] = calculate_statistics(dataset)
@@ -50,7 +50,7 @@ def image() -> Response:
     # creating the plot
 
     fig = Figure()
-    fig.gca().bar(
+    fig.gca().hist(
         list(sorted(counter.keys())),
         [counter[x] for x in sorted(counter.keys())],
         color="gray",
@@ -71,6 +71,17 @@ def image() -> Response:
 
     # TODO: populate the plot
 
+     [game.release_year for game in dataset],  # x-axeln för histogrammet
+    bins=10,  # antalet staplar i histogrammet
+    color="gray",
+    alpha=0.5,
+    zorder=2,
+)
+fig.gca().grid(ls=":", zorder=1)
+fig.gca().set_xlabel("Release Year")
+fig.gca().set_ylabel("Number of Games")
+fig.tight_layout()
+
     ################ START -  THIS PART MUST NOT BE CHANGED BY STUDENTS ################
     # create a string buffer to hold the final code for the plot
     output = io.StringIO()
@@ -86,24 +97,10 @@ def about() -> Response:
 
 
 ################################## web service routes ##################################
-
-
-@bp.get("/json-dataset")
-def get_json_dataset() -> Response:
-    # TODO
-    pass
-
-
-@bp.get("/json-stats")
-def get_json_stats() -> Response:
-    # TODO
-    pass
-
-
 @bp.get("/json-dataset")  # root route
 def get_json_dataset() -> Response:
     # gets dataset
-    dataset: list[Movie] = get_data_list()
+    dataset: list[IGN_games] = get_data_list()
 
     # render the page
     return jsonify(dataset)
@@ -112,7 +109,7 @@ def get_json_dataset() -> Response:
 @bp.get("/json-stats")  # root route
 def get_json_stats() -> Response:
     # gets dataset
-    dataset: list[Movie] = get_data_list()
+    dataset: list[IGN_games] = get_data_list()
 
     # get the statistics that is supposed to be shown
     counter: dict[int, int] = calculate_statistics(dataset)
