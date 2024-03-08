@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 # python built-in imports
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass  # field
+
+# from datetime import datetime
 
 
 @dataclass
-class IGN_games:
+class IgnGames:
     title: str
     score: float
     score_phrase: str
@@ -15,4 +16,3 @@ class IGN_games:
     release_year: int
     release_month: int
     release_day: int
-

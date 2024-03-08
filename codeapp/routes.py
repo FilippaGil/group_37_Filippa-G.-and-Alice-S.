@@ -13,9 +13,10 @@ from flask.wrappers import Response as FlaskResponse
 from matplotlib.figure import Figure
 from werkzeug.wrappers.response import Response as WerkzeugResponse
 
+from codeapp.models import IgnGames
+
 # internal imports
 from codeapp.utils import calculate_statistics, get_data_list, prepare_figure
-from codeapp.models import IGN_games
 
 # define the response type
 Response = str | FlaskResponse | WerkzeugResponse
@@ -29,10 +30,10 @@ bp = Blueprint("bp", __name__, url_prefix="/")
 @bp.get("/")  # root route
 def home() -> Response:
     # gets dataset
-    dataset: list[IGN_games] = get_data_list()
+    dataset: list[IgnGames] = get_data_list()
 
     # get the statistics that is supposed to be shown
-    counter: dict[int, int] = calculate_statistics(dataset)
+    counter: dict[str, int] = calculate_statistics(dataset)
 
     # render the page
     return render_template("home.html", counter=counter)
@@ -42,25 +43,28 @@ def home() -> Response:
 def image() -> Response:
     # gets dataset
 
-    dataset: list[IGN_games] = get_data_list()
+    dataset: list[IgnGames] = get_data_list()
 
     # get the statistics that is supposed to be shown
-    counter: dict[int | str, int] = calculate_statistics(dataset)
+    counter: dict[str, int] = calculate_statistics(dataset)
 
     # creating the plot
 
     fig = Figure()
     fig.gca().hist(
         list(sorted(counter.keys())),
-        [counter[x] for x in sorted(counter.keys())],
+        weights=[counter[x] for x in sorted(counter.keys())],
+        bins=20,
         color="gray",
         alpha=0.5,
         zorder=2,
     )
 
     fig.gca().grid(ls=":", zorder=1)
-    fig.gca().set_xlabel("Release Year")
+    fig.gca().set_xlabel("Platform")
     fig.gca().set_ylabel("Number of games")
+    fig.gca().set_xticks(sorted(counter.keys()))
+    fig.gca().set_xticklabels(sorted(counter.keys()), rotation="vertical")
     fig.tight_layout()
 
     ################ START -  THIS PART MUST NOT BE CHANGED BY STUDENTS ################
@@ -81,7 +85,7 @@ def about() -> Response:
 @bp.get("/json-dataset")  # root route
 def get_json_dataset() -> Response:
     # gets dataset
-    dataset: list[IGN_games] = get_data_list()
+    dataset: list[IgnGames] = get_data_list()
 
     # render the page
     return jsonify(dataset)
@@ -90,10 +94,10 @@ def get_json_dataset() -> Response:
 @bp.get("/json-stats")  # root route
 def get_json_stats() -> Response:
     # gets dataset
-    dataset: list[IGN_games] = get_data_list()
+    dataset: list[IgnGames] = get_data_list()
 
     # get the statistics that is supposed to be shown
-    counter: dict[int, int] = calculate_statistics(dataset)
+    counter: dict[str, int] = calculate_statistics(dataset)
 
     # render the page
     return jsonify(counter)
