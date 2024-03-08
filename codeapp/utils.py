@@ -1,16 +1,19 @@
 # built-in imports
-import collections
+# import collections
 import csv
-import os
+
+# import os
 import pickle
-import uuid
+
+# import uuid
 
 # standard library imports
 
 # external imports
 import requests
 from flask import current_app
-from sklearn.utils import Bunch
+
+# from sklearn.utils import Bunch
 
 # internal imports
 from codeapp import db
@@ -33,7 +36,9 @@ def get_data_list() -> list[IGN_games]:
         return dataset_stored
 
     current_app.logger.info("Downloading dataset.")
-    response = requests.get("https://onu1.s2.chalmers.se/datasets/IGN_games.csv")
+    response = requests.get(
+        "https://onu1.s2.chalmers.se/datasets/IGN_games.csv", timeout=10
+    )
     if response.status_code == 200:
         with open("IGN_games.csv", "wb") as file:
             file.write(response.content)
@@ -46,20 +51,20 @@ def get_data_list() -> list[IGN_games]:
     with open("IGN_games.csv", encoding="utf-8") as file:
         reader = csv.DictReader(file)
         for row in reader:
-            new_IGN_games = IGN_games(
+            new_ign_games = IGN_games(
                 title=row["title"],
-                score=row["score"],
+                score=float(row["score"]),
                 score_phrase=row["score_phrase"],
                 platform=row["platform"],
                 genre=row["genre"],
-                release_year=row["release_year"],
-                release_month=row["release_month"],
-                release_day=row["release_day"],
+                release_year=int(row["release_year"]),
+                release_month=int(row["release_month"]),
+                release_day=int(row["release_day"]),
             )
         # create a new object
         # push object to the database list
-        db.rpush("dataset_list", pickle.dumps(new_IGN_games))
-        dataset_base.append(new_IGN_games)  # append to the list
+        db.rpush("dataset_list", pickle.dumps(new_ign_games))
+        dataset_base.append(new_ign_games)  # append to the list
 
     return dataset_base
 
@@ -80,6 +85,7 @@ def calculate_statistics(dataset: list[IGN_games]) -> dict[int | str, int]:
     sorting = sorted(gamedict.items(), key=lambda item: item[1], reverse=True)
     cutted = sorting[:20]
     cutdict: dict[int | str, int] = dict(cutted)
+    print(cutdict)
     return cutdict
 
 
