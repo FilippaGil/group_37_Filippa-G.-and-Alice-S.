@@ -1,14 +1,17 @@
 # built-in imports
-# standard library imports
 import csv
+import pickle
 
+# standard library imports
 import requests
 
+# external imports
+from flask import current_app
+
 # internal imports
-# from codeapp import db
+from codeapp import db
 from codeapp.models import IgnGames
 
-# external imports
 # from flask import current_app
 # from sklearn.utils import Bunch
 
@@ -18,44 +21,38 @@ def get_data_list() -> list[IgnGames]:
     Function responsible for downloading the dataset from the source, translating it
     into a list of Python objects, and saving it to a Redis list.
     """
-    ##### check if dataset already exists, and if so, return the existing dataset  #####
-    # db.delete("dataset_list")  # uncomment if you want to force deletion
-    # if db.exists("dataset_list") > 0:  # checks if the `dataset` key already exists
-    # current_app.logger.info("Dataset already downloaded.")
-    # dataset_stored: list[IGN_games] = []  # empty list to be returned
-    # raw_dataset: list[bytes] = db.lrange("dataset_list", 0, -1)  # get list from DB
-    # for item in raw_dataset:
-    # dataset_stored.append(pickle.loads(item))  # load item from DB
-    # return dataset_stored
-    # current_app.logger.info("Downloading dataset.")
-    response = requests.get(
-        "https://onu1.s2.chalmers.se/datasets/IGN_games.csv", timeout=10
-    )
+    # Database configuration
+    if db.exists("dataset_list") > 0:
+        current_app.logger.info("The dataset has already been downloaded!")
+        dataset_stored: list[IgnGames] = []
+        first_dataset: list[bytes] = db.lrange("dataset_list", 0, -1)
+        for item in first_dataset:
+            dataset_stored.append(pickle.loads(item))
+        return dataset_stored
 
-    with open("IGN_games.csv", "wt", encoding="utf-8") as file:
-        file.write(response.text)
+    url = "https://onu1.s2.chalmers.se/datasets/IGN_games.csv"
+    response = requests.get(url, timeout=10)
+    return_dataset: list[IgnGames] = []
+    csv_data = response.content.decode("utf-8")
+    csv_reader = csv.DictReader(csv_data.splitlines())
 
-    dataset_base: list[IgnGames] = []  # list to store the items
-    # for each item in the dataset...
-    with open("IGN_games.csv", "rt", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            new_ign_games = IgnGames(
-                title=row["title"],
-                score=float(row["score"]),
-                score_phrase=row["score_phrase"],
-                platform=row["platform"],
-                genre=row["genre"],
-                release_year=int(row["release_year"]),
-                release_month=int(row["release_month"]),
-                release_day=int(row["release_day"]),
-            )
-            # create a new object
-            # push object to the database list
-            # db.rpush("dataset_list", pickle.dumps(new_ign_games))
-            dataset_base.append(new_ign_games)  # append to the list
-            print(new_ign_games)
-    return dataset_base
+    for row in csv_reader:
+        new_ign_games: IgnGames = IgnGames(
+            title=row["title"],
+            score=float(row["score"]),
+            score_phrase=row["score_phrase"],
+            platform=row["platform"],
+            genre=row["genre"],
+            release_year=int(row["release_year"]),
+            release_month=int(row["release_month"]),
+            release_day=int(row["release_day"]),
+        )
+        # create a new object
+        # push object to the database list
+        # db.rpush("dataset_list", pickle.dumps(new_ign_games))
+        return_dataset.append(new_ign_games)
+        db.rpush("dataset_list", pickle.dumps(new_ign_games))
+    return return_dataset
 
 
 def calculate_statistics(dataset: list[IgnGames]) -> dict[str, int]:
